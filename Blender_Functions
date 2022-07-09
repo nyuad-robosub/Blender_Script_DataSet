@@ -1,0 +1,181 @@
+import bpy
+import random
+import os
+
+
+# Creating a Dictionary for opening the objects 
+Dict = {0: 'Qual_gate',  1: 'Bootlegger_cuttout_buoy', 2: 'G-man_cuttout_buoy', 3: 'Updated_scaled_qual_gate'}
+
+# importing the different objects 
+def object_importing(x): 
+    # variable for the file location 
+    file_loc = '/home/aira/Downloads/Objects for Blender'  
+    
+    # importing object file 
+    joined_path = os.path.join(file_loc, (Dict[x]) + '.dae')
+    imported_object = bpy.ops.wm.collada_import(filepath = joined_path, 
+                      auto_connect = True, 
+                      find_chains = True, 
+                      fix_orientation = True) 
+    
+    #assigning name to the imported objects 
+    bpy.context.selected_objects[0].name = Dict[x]
+    
+    # import object to origin 
+    (Dict[x]).location = (0.0, 0.0, 0.0)
+     
+
+
+
+#destroying imported objects once the data set is created before importing 
+# the next ones 
+def object_destruction(object_2_delete):
+    
+    current_object = bpy.data.objects[object_2_delete]
+    
+    bpy.ops.object.select_all(action='DESELECT')
+
+    view_layer = bpy.context.view_layer
+
+    # Link light object to the active collection of current view layer,
+    # so that it'll appear in the current scene.
+    view_layer.active_layer_collection.collection.objects.link(current_object)
+
+    # And finally select it and make it active.
+    current_object.select_set(True)
+    view_layer.objects.active = current_object
+    
+    # since the imported objects are in the form of a heirarchy so need to delete the
+    # children objects as well 
+    bpy.ops.object.select_grouped(type='CHILDREN_RECURSIVE')
+    bpy.ops.object.delete()
+    bpy.data.objects.remove(current_object, do_unlink=True)
+
+
+#making sure the camera tracks the newly imported object
+def Track_To( current_object):
+    
+    # This code will create the camera and set it up to track to the Cube
+    track_object = bpy.data.objects[current_object]
+    scene = bpy.context.scene
+
+    cam = bpy.data.objects['Camera Housing']
+    cons = cam.constraints.new(type='TRACK_TO')
+    cons.target = track_object
+    scene.camera = cam
+
+ 
+    
+def Camera_Motion():
+    
+    camera_housing = bpy.data.objects['Camera Housing']
+    camera = bpy.data.objects['Camera']
+     
+    
+    for i in range(2):
+        x = random.random() * 44 - 22
+        y = random.random() * 22 - 11
+        
+        if x > 17.6: 
+            z_lower_bound = -0.176
+        else:
+            z_lower_bound = -0.047 * x + 0.634
+        
+        z =  random.random() * 3.8 - z_lower_bound
+        
+        camera_housing.location[0] = x
+        camera_housing.location[1] = y
+        camera_housing.location[2] = z
+        
+        
+        x = random.random() * 69 - 35
+        y = random.random() * 55 - 25 
+        camera.rotation_euler[0] = x
+        camera.rotation_euler[1] = y
+
+
+
+def Object_Motion(object_to_follow):
+    
+    for i in range(100):
+        x = random.random() * 40 - 20
+        y = random.random() * 16 - 8
+
+        if x > 17.6: 
+            z = 2.1
+        else:
+            z = -0.04 * x + 4.58
+        
+        object.location[0] = x
+        object.location[1] = y
+        object.location[2] = z
+            
+    
+def HDRI_Import(x):
+    
+    scn = bpy.context.scene
+
+    # Get the environment node tree of the current scene
+    node_tree = scn.world.node_tree
+    tree_nodes = node_tree.nodes
+
+    # Clear all nodes
+    tree_nodes.clear()
+
+    # Add Background node
+    node_background = tree_nodes.new(type='ShaderNodeBackground')
+
+    # Add Environment Texture node
+    node_environment = tree_nodes.new('ShaderNodeTexEnvironment')
+
+    file_pathway_4_hdris = '/home/aira/Downloads/Backgrounds_Blender'  
+
+    # importing object file 
+    joined_path = os.path.join(file_loc, x + '.exr')
+
+    # Load and assign the image to the node property
+    node_environment.image = bpy.data.images.load(joined_path) 
+    node_environment.location = -300,0
+
+    # Add Output node
+    node_output = tree_nodes.new(type='ShaderNodeOutputWorld')   
+    node_output.location = 400,0
+
+    # Link all nodes
+    links = node_tree.links
+    link = links.new(node_environment.outputs["Color"], node_background.inputs["Color"])
+    link = links.new(node_background.outputs["Background"], node_output.inputs["Surface"])
+    
+    random.seed(2)
+    # generating random number for strength of the HDRI             
+    w = round(random.uniform(1.00, 3.00), 2)
+    
+    # assigning strength to the HDRI
+    bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[1].default_value = w
+            
+    
+    
+def Change_Water_Features():
+
+    H = round(random.uniform(0.5, 0.6), 5)
+    S = round(random.uniform(0.8, 0.9), 5)
+    V = round(random.uniform(0.5,1.0), 5)
+    
+    bpy.data.materials["Water"].node_tree.nodes["Hue Saturation Value"].inputs[4].default_value = ( H, S, V, 1) 
+    
+    math_multiply = round(random.uniform(0.04, 0.2), 3) 
+    bpy.data.materials["Water"].node_tree.nodes["Math"].inputs[1].default_value = math_multiply 
+
+
+    
+def Render():
+    scene = bpy.context.scene
+    cam = bpy.data.objects['Camera']
+    scene.render.filepath = "/home/aira/Desktop/Annimation_test_1/marker_test/io.png"
+    bpy.ops.render.render(write_still=True, use_viewport=True)
+    
+    
+    
+    
+
+
