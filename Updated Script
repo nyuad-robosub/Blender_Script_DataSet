@@ -1,3 +1,6 @@
+https://blender.stackexchange.com/questions/882/how-to-find-image-coordinates-of-the-rendered-vertex
+
+
 import bpy
 import random
 import os
