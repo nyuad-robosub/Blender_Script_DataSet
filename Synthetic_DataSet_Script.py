@@ -358,4 +358,14 @@ if __name__ == "__main__":
            Change_Pool_tiles()
            Bounding_Box(obj, camera, scene, Dict[d], i)
        ObjectDeletion(obj)
-#            
+# code for generating the dictionary
+    i = 0
+    for me, obs in meshes.items():
+        for obj in obs: 
+            if obj.name == "Water" or obj.name == "Camera Housing" or obj.name == "Cube" or obj.name ==  "Cube.001" or obj.name ==  "Cube.006" or obj.name == "Cube.004" or obj.name ==  "Pool":
+                continue
+            elif "bottle." in obj.name or "target" in obj.name or "octagon" in obj.name or "handle" in obj.name or "lid" in obj.name:
+                continue 
+            else: 
+                print(str(i), ':', '"',obj.name,'"' ,',')
+                i+=1
