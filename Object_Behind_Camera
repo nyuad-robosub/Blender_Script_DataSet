@@ -1,0 +1,17 @@
+import bpy
+from bpy_extras.object_utils import world_to_camera_view
+import random
+import os
+import numpy as np
+from math import *
+from mathutils import *
+
+o = bpy.context.object
+camera = bpy.data.objects['Camera']
+local_bbox_center = 0.125 * sum((Vector(b) for b in o.bound_box), Vector())
+global_bbox_center = o.matrix_world @ local_bbox_center
+print (global_bbox_center[-1])
+check = world_to_camera_view(bpy.context.scene, camera, global_bbox_center)
+print(check)
+if check[-1] < 0:
+    print('object behind camera')
