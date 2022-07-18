@@ -1,0 +1,490 @@
+import bpy
+from bpy_extras.object_utils import world_to_camera_view
+import random
+import os
+import numpy as np
+from math import *
+from mathutils import *
+from collections import defaultdict
+import xml.etree.cElementTree as ET
+ 
+
+# Creating a Dictionary for opening the objects 
+Dict = {0: 'qual_gate', 
+        1: 'bin_empty',
+        2: 'lid_empty',
+        3: 'image_badge',
+        4: 'image_bootlegger',
+        5: 'gman_image',
+        6: 'image_tommygun',
+        7: 'handle',
+        8: 'marker',
+        9: 'table_bootlegger',
+        10:'table_gman',
+        11:'table_bottles',
+        12:'bin_bootlegger',
+        13:'bin_gman'
+        }
+        
+Objects_to_Track = {
+    0 : "gman_image" ,
+    1 : "image_bootlegger" ,
+    2 : "qual_gate" ,
+    3 : "gman_image.001" ,
+    4 : "image_bootlegger.001" ,
+    5 : "qual_gate.001" ,
+    6 : "gman_image.002" ,
+    7 : "image_bootlegger.002" ,
+    8 : "qual_gate.002" ,
+    9 : "gman_image.003" ,
+    10 : "image_bootlegger.003" ,
+    11 : "qual_gate.003" ,
+    12 : "marker" ,
+    13 : "marker.001" ,
+    14 : "marker.002" ,
+    15 : "marker.003" ,
+    16 : "image_tommygun" ,
+    17 : "image_badge" ,
+    18 : "image_tommygun.001" ,
+    19 : "image_badge.001" ,
+    20 : "image_tommygun.002" ,
+    21 : "image_badge.002" ,
+    22 : "image_tommygun.003" ,
+    23 : "image_badge.003" ,
+    24 : "marker.004" ,
+    25 : "marker.005" ,
+    26 : "marker.006" ,
+    27 : "marker.007" ,
+    28 : "bin_gman" ,
+    29 : "bin_bootlegger" ,
+    30 : "bin_gman.001" ,
+    31 : "bin_bootlegger.001" ,
+    32 : "bin_gman.002" ,
+    33 : "bin_bootlegger.002" ,
+    34 : "bin_gman.003" ,
+    35 : "bin_bootlegger.003" ,
+    36 : "gman_image.004" ,
+    37 : "image_bootlegger.004" ,
+    38 : "gman_image.005" ,
+    39 : "image_bootlegger.005" ,
+    40 : "gman_image.007" ,
+    41 : "image_bootlegger.007" ,
+    42 : "image_bootlegger.006" ,
+    43 : "gman_image.006" ,
+    44 : "table_bootlegger.003 ",
+    45 : "table_bottles" ,
+    46 : "table_gman" ,
+    47 : "table_bootlegger" ,
+    48 : "table_bottles.001" ,
+    49 : "table_gman.001" ,
+    50 : "table_bootlegger.001" ,
+    51 : "table_bottles.002" ,
+    52 : "table_gman.002" ,
+    53 : "table_bootlegger.002" ,
+    54 : "table_bottles.003" ,
+    55 : "table_gman.003" 
+}
+objects_bounding_box= {
+    0 : "gman_image" ,
+    1 : "image_bootlegger" ,
+    2 : "qual_gate" ,
+    3 : "gman_image.001" ,
+    4 : "image_bootlegger.001" ,
+    5 : "qual_gate.001" ,
+    6 : "gman_image.002" ,
+    7 : "image_bootlegger.002" ,
+    8 : "qual_gate.002" ,
+    9 : "gman_image.003" ,
+    10 : "image_bootlegger.003" ,
+    11 : "qual_gate.003" ,
+    12 : "marker" ,
+    13 : "marker.001" ,
+    14 : "marker.002" ,
+    15 : "marker.003" ,
+    16 : "image_tommygun" ,
+    17 : "image_badge" ,
+    18 : "image_tommygun.001" ,
+    19 : "image_badge.001" ,
+    20 : "image_tommygun.002" ,
+    21 : "image_badge.002" ,
+    22 : "image_tommygun.003" ,
+    23 : "image_badge.003" ,
+    24 : "marker.004" ,
+    25 : "marker.005" ,
+    26 : "marker.006" ,
+    27 : "marker.007" ,
+    28 : "bin_gman" ,
+    29 : "lid_empty" ,
+    30 : "handle" ,
+    31 : "bin_bootlegger" ,
+    32 : "lid_empty.001" ,
+    33 : "handle.001" ,
+    34 : "bin_gman.001" ,
+    35 : "lid_empty.002" ,
+    36 : "handle.002" ,
+    37 : "bin_bootlegger.001" ,
+    38 : "lid_empty.003" ,
+    39 : "handle.003" ,
+    40 : "bin_gman.002" ,
+    41 : "lid_empty.004" ,
+    42 : "handle.004" ,
+    43 : "bin_bootlegger.002" ,
+    44 : "lid_empty.005" ,
+    45 : "handle.005" ,
+    46 : "bin_gman.003" ,
+    47 : "lid_empty.006" ,
+    48 : "handle.006" ,
+    49 : "bin_bootlegger.003" ,
+    50 : "lid_empty.007" ,
+    51 : "handle.007" ,
+    52 : "gman_image.004" ,
+    53 : "target_star" ,
+    54 : "target_large" ,
+    55 : "target_cup" ,
+    56 : "image_bootlegger.004" ,
+    57 : "target_large.001" ,
+    58 : "gman_image.005" ,
+    59 : "target_star.001" ,
+    60 : "target_large.002" ,
+    61 : "target_cup.001" ,
+    62 : "image_bootlegger.005" ,
+    63 : "target_large.003" ,
+    64 : "gman_image.007" ,
+    65 : "target_star.003" ,
+    66 : "target_large.006" ,
+    67 : "target_cup.003" ,
+    68 : "image_bootlegger.007" ,
+    69 : "target_large.007" ,
+    70 : "target_cup.002" ,
+    71 : "image_bootlegger.006" ,
+    72 : "target_large.004" ,
+    73 : "gman_image.006" ,
+    74 : "target_star.002" ,
+    75 : "target_large.005" ,
+    76 : "bottle.004" ,
+    77 : "bottle.003" ,
+    78 : "bottle.002" ,
+    79 : "bottle.001" ,
+    80 : "bottle" ,
+    81 : "table_bottles" ,
+    82 : "table_gman" ,
+    83 : "table_bootlegger" ,
+    84 : "bottle.005" ,
+    85 : "bottle.006" ,
+    86 : "bottle.007" ,
+    87 : "bottle.008" ,
+    88 : "bottle.009" ,
+    89 : "table_bottles.001" ,
+    90 : "table_gman.001" ,
+    91 : "table_bootlegger.001" ,
+    92 : "bottle.010" ,
+    93 : "bottle.011" ,
+    94 : "bottle.012" ,
+    95 : "bottle.013" ,
+    96 : "bottle.014" ,
+    97 : "table_bottles.002" ,
+    98 : "table_gman.002" ,
+    99 : "table_bootlegger.002" ,
+    100 : "bottle.015" ,
+    101 : "bottle.016" ,
+    102 : "bottle.017" ,
+    103 : "bottle.018" ,
+    104 : "bottle.019" ,
+    105 : "table_bottles.003" ,
+    106 : "table_gman.003" ,
+    107 : "table_bootlegger.003" 
+}
+
+cam_bound_size = {
+    0: (35, False, 0),
+    1: (20, True, 1),
+    2: (3, True, 1.6),
+    3: (25, False, 0),
+    4: (25, False, 0),
+    5: (25, False, 0),
+    6: (25, False, 0),
+    7: (2, True, 1.6),
+    8: (6, True, 1),
+    9: (20, True, 1),
+    10:(20, True, 1),
+    11:(20, True, 1),
+    12:(20, True, 1),
+    13:(20, True, 1)
+}
+obj_z_from_bottom = {
+    0: (False, 0),
+    1: (True, 0.5),
+    2: (False, 0),
+    3: (False, 0),
+    4: (False, 0),
+    5: (False, 0),
+    6: (False, 0),
+    7: (False, 0),
+    8: (True, 0.2),
+    9: (True, 0.5),
+    10:(True, 0.5),
+    11:(True, 0.5),
+    12:(True, 0.5),
+    13:(True, 0.5),
+}
+
+
+#making sure the camera tracks the newly imported object
+def Track_To(obj):
+    track_object = bpy.data.objects[obj]
+    cam = bpy.data.objects['Camera Housing']   
+    cons = cam.constraints['Track To']
+    cons.target = track_object
+            
+
+def Camera_Motion(object_name, d):
+    # Parameter position of object to follow & id of object
+    
+    pos = bpy.data.objects[object_name].location
+    
+    camera_housing = bpy.data.objects['Camera Housing']
+    camera = bpy.data.objects['Camera']
+     
+    xlim_min = max(pos[0] - cam_bound_size[d][0] / 2.0, -24)
+    xlim_max = min(pos[0] + cam_bound_size[d][0] / 2.0, 24)
+    ylim_min = max(pos[1] - cam_bound_size[d][0] / 2.0, -11)
+    ylim_max = min(pos[1] + cam_bound_size[d][0] / 2.0, 11)
+    
+    x = round(random.uniform(xlim_min, xlim_max), 5)
+    y = round(random.uniform(ylim_min, ylim_max), 5)
+        
+    if x > 17.842: 
+        z_lower_bound = -0.16994 + 0.2
+    else:
+        z_lower_bound = -0.04019 * x + 0.8870 + 0.2
+    
+    if not cam_bound_size[d][1]:
+        z = random.random() * (3.7 - z_lower_bound) + z_lower_bound
+    else:
+        z = 3.7 - random.random() * cam_bound_size[d][2]
+        
+    camera_housing.location[0] = x
+    camera_housing.location[1] = y
+    camera_housing.location[2] = z
+
+
+    
+def HDRI_Import():
+    
+    scn = bpy.context.scene
+    
+    # Get the environment node tree of the current scene
+    node_tree = scn.world.node_tree
+    tree_nodes = node_tree.nodes
+
+    # Clear all nodes
+    tree_nodes.clear()
+
+    # Add Background node
+    node_background = tree_nodes.new(type='ShaderNodeBackground')
+
+    # Add Environment Texture node
+    node_environment = tree_nodes.new('ShaderNodeTexEnvironment')
+
+    file_pathway_4_hdris = '/home/aira/Downloads/render package-20220710T234909Z-001/render package/Backgrounds_Blender-20220710T021809Z-001/Backgrounds_Blender' 
+    
+    x = str(random.randint(0,8))
+
+    # importing object file 
+    joined_path = os.path.join(file_pathway_4_hdris, x + '.exr')
+
+    # Load and assign the image to the node property
+    node_environment.image = bpy.data.images.load(joined_path) 
+    node_environment.location = -300,0
+
+    # Add Output node
+    node_output = tree_nodes.new(type='ShaderNodeOutputWorld')   
+    node_output.location = 400,0
+
+    # Link all nodes
+    links = node_tree.links
+    link = links.new(node_environment.outputs["Color"], node_background.inputs["Color"])
+    link = links.new(node_background.outputs["Background"], node_output.inputs["Surface"])
+    
+    # generating random number for strength of the HDRI             
+    w = round(random.uniform(1.20, 3.00), 2)
+    
+    # assigning strength to the HDRI
+    bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[1].default_value = w
+            
+    
+    
+def Change_Water_Features():
+
+    H = round(random.uniform(0.50, 0.65), 5)
+    S = round(random.uniform(0.95, 1.0), 5)
+    V = round(random.uniform(0.7, 1.0), 5)
+    
+    bpy.data.materials["Water"].node_tree.nodes["Hue Saturation Value"].inputs[4].default_value = ( H, S, V, 1) 
+    
+    math_multiply = round(random.uniform(0.04, 0.05), 3) 
+    bpy.data.materials["Water"].node_tree.nodes["Math"].inputs[1].default_value = math_multiply 
+
+
+def Change_Pool_tiles():
+    
+    # Get the environment node tree of the current scene
+    tree_nodes = bpy.data.materials["Pool.001"].node_tree.nodes["Image Texture"]
+
+    file_pathway_4_pool_tiles = '/home/aira/Downloads/render package-20220710T234909Z-001/render package/Pool_Floor_Options'  
+    
+    x = str(random.randint(0,6))
+
+    # importing object file 
+    joined_path = os.path.join(file_pathway_4_pool_tiles , x + '.png')
+
+    # Load and assign the image to the node property
+    tree_nodes.image = bpy.data.images.load(joined_path) 
+    
+
+
+def Bounding_Box(object_name, camera, scene): 
+    
+    #create new mesh data using inverse transform matrix to undo transformations
+    dg = bpy.context.evaluated_depsgraph_get()
+    obj = dg.objects[object_name]
+    mesh = obj.to_mesh(preserve_all_data_layers=True, depsgraph=dg)
+    
+    lx = []
+    ly = []
+    
+    # 0bpy.context.view_layer.update()// separate list for z vertices: less than 0; if all are less than 0 then teh object is entirely behind 
+    for v in mesh.vertices:
+        co_final = obj.matrix_world @ v.co
+        co_image = world_to_camera_view(bpy.context.scene, camera, co_final)
+        x = co_image[0]
+        y = co_image[1]
+        lx.append(x)
+        ly.append(y)
+        
+    
+    # if all the x &y are outside the range 
+    # check if object is too far== eliminate the longer ones     
+    min_x = np.clip(min(lx), 0.0, 1.0)
+    min_y = np.clip(min(ly), 0.0, 1.0)
+    max_x = np.clip(max(lx), 0.0, 1.0)
+    max_y = np.clip(max(ly), 0.0, 1.0)
+    
+    rp = scene.render.resolution_percentage
+    rx = scene.render.resolution_x
+    ry = scene.render.resolution_y
+     
+    fac = rp * 0.01
+    dim_x =  rx * fac
+    dim_y =  ry * fac
+    
+    xmin = min_x * dim_x
+    ymin = dim_y - max_y * dim_y
+
+    width = (max_x - min_x) * dim_x
+    height = (max_y - min_y) * dim_y
+
+    xmax = xmin + width
+    ymax = ymin + height
+    
+    coord_lists = [xmin, xmax, ymin, ymax]
+    
+    return coord_lists
+
+
+
+def Writing_XML_Files(obj_name, j): 
+    
+    rp = scene.render.resolution_percentage
+    rx = scene.render.resolution_x
+    ry = scene.render.resolution_y
+    
+    fac = rp * 0.01
+    dim_x =  rx * fac
+    dim_y =  ry * fac
+    
+   #write parameters into xml file
+    annotation = ET.Element("annotation")
+    ET.SubElement(annotation, "folder").text = "0"
+    ET.SubElement(annotation, "filename").text = "0"
+    ET.SubElement(annotation, "path").text = "0"
+    source = ET.SubElement(annotation, "source")
+    ET.SubElement(source, "database").text = "Unknown"
+    size = ET.SubElement(annotation, "size")
+    ET.SubElement(size, "width").text = str(dim_x)
+    ET.SubElement(size, "height").text = str(dim_y)
+    ET.SubElement(size, "depth").text = "3"
+    ET.SubElement(annotation, "segmented").text = "0"
+    
+    for h in range(104):
+      object = bpy.data.objects[objects_bounding_box[h]]
+      cam_location = camera.matrix_world.translation
+      pos = bpy.data.objects[objects_bounding_box[h]].location
+      cam_distance = (object.matrix_world @ pos - cam_location).length
+      if cam_distance > 10:
+          #print(' Distance between object and camera greater than 25m')
+          continue
+      else: 
+          #print (global_bbox_center[-1])
+          check = world_to_camera_view(bpy.context.scene, camera, pos)
+          #print(check)
+          if check[-1] < 0:
+            #print('object behind camera')
+            continue 
+          else: 
+            list1 = Bounding_Box(objects_bounding_box[h], camera, scene)
+            xmin = list1[0]
+            xmax = list1[1]
+            ymin = list1[2]
+            ymax = list1[3]
+            object = ET.SubElement(annotation, "object")
+            ET.SubElement(object, "name").text = objects_bounding_box[h]
+            ET.SubElement(object, "pose").text = "Unspecified"
+            ET.SubElement(object, "truncated").text = "0"
+            ET.SubElement(object, "difficult").text = "0"
+            bndbox = ET.SubElement(object, "bndbox")
+            ET.SubElement(bndbox, "xmin").text = str(xmin)
+            ET.SubElement(bndbox, "ymin").text = str(ymin)
+            ET.SubElement(bndbox, "xmax").text = str(xmax)
+            ET.SubElement(bndbox, "ymax").text = str(ymax)
+
+    XML = ET.ElementTree(annotation)
+    label_path = '/home/aira/Desktop/Annimation_test_1/Data_Set3'
+    joined_path = os.path.join(label_path, obj_name + "_" + str(j) + '.xml')
+    XML.write (joined_path) 
+
+
+
+def Rendering(obj_name, j ): 
+    
+    scene = bpy.context.scene
+    cam = bpy.data.objects['Camera']
+    render_path = '/home/aira/Desktop/Annimation_test_1/Data_Set3'
+    joined_path = os.path.join(render_path, obj_name + "_" + str(j) + '.jpg')
+    scene.render.filepath =  joined_path
+    bpy.ops.render.render(write_still=True, use_viewport=True)
+    
+
+
+if __name__ == "__main__":
+    #random.seed(7786654)          #273958)
+    #initialize objects, camera, and scenes 
+    camera = bpy.data.objects['Camera']
+    scene = bpy.data.scenes['Scene']
+    p = 0 
+    for i in range(4): 
+        for d in range(56): 
+            Track_To(Objects_to_Track[d]) 
+            for x in range(14):
+                  if Dict[x] in Objects_to_Track[d]:
+                      obj = bpy.data.objects[Dict[x]]
+                     # pos = Object_Motion(obj, x)
+                      Camera_Motion(Objects_to_Track[d], x)
+                      Change_Water_Features()
+                      Change_Pool_tiles()
+                      HDRI_Import() 
+                      Writing_XML_Files(Dict[x], p)
+                      Rendering(Dict[x], p )
+                      p+=1  
+                              
+                                
